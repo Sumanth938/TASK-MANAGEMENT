@@ -56,6 +56,19 @@ def get_db():
 
 @router.get("/tasks")
 async def get_all_tasks(sort_by: Optional[int] = None,page: Optional[int] = 1, size: Optional[int] = 20):
+    """
+    Retrieve all active tasks with optional sorting and pagination.
+
+    Parameters:
+    ----------
+    sort_by : Optional[int] - Sort tasks by ID (1 for ascending, 2 for descending). Defaults to None.\n
+    page : Optional[int] - The page number to retrieve. Defaults to 1.\n
+    size : Optional[int]- Number of tasks per page. Defaults to 20.\n
+
+    Returns:
+    -------
+    JSONResponse - A JSON response containing task data, status, and pagination details.
+    """
     session = None
     try:
         session = Session()
@@ -106,6 +119,18 @@ async def get_all_tasks(sort_by: Optional[int] = None,page: Optional[int] = 1, s
 
 @router.get("/tasks/{id}")
 def get_task_by_id(id):
+    """
+    Retrieve a specific task by its ID if it is active.
+
+    Parameters:
+    ----------
+    id : int - The ID of the task to retrieve.\n
+
+    Returns:
+    -------
+    dict -  A dictionary containing the task details if found, along with a success message and status code.\n
+    JSONResponse - A JSON response with an error message and a 404 status code if the task is not found.
+    """
     session = None
     try:
         session = Session()
@@ -125,6 +150,23 @@ def get_task_by_id(id):
 
 @router.post("/tasks")
 def create_new_task(request:TaskRequest,user: dict = Depends(get_current_user)):
+    """
+    Creates a new task in the system for the authenticated user.
+
+    Validates the `due_date` to ensure it is in the future and associates the task with the authenticated user.
+    If successful, returns a 201 response with a success message. If validation fails, appropriate error responses are returned.
+
+    Parameters:
+    - request (TaskRequest): The task details (title, description, due_date).\n
+    - user (dict, optional): The authenticated user, injected by `Depends(get_current_user)`.\n
+
+    Returns:
+    - JSONResponse: A JSON response with a success or error message and an HTTP status code:
+        - HTTP 201 if the task is successfully created.\n
+        - HTTP 400 if the `due_date` is in the past.\n
+        - HTTP 404 if the user is not found.\n
+        - HTTP 500 if an internal error occurs.\n
+    """
     session = None
     try:
         session = Session()
@@ -162,6 +204,25 @@ def create_new_task(request:TaskRequest,user: dict = Depends(get_current_user)):
 
 @router.put("/tasks/{task_id}", response_model=dict)
 def update_task(task_id: int, request: TaskRequest, user: dict = Depends(get_current_user)):
+    """
+    Updates an existing task for the authenticated user.\n
+
+    Validates if the task exists, is owned by the user, and is not already marked as "completed".
+    Updates the task's title, description, and due date, then returns a success response.
+    If any validation fails, appropriate error responses are returned.
+
+    Parameters:
+    - task_id (int): The ID of the task to be updated.\n
+    - request (TaskRequest): The updated task details (title, description, due_date).\n
+    - user (dict, optional): The authenticated user, injected by `Depends(get_current_user)`.\n
+
+    Returns:
+    - JSONResponse: A JSON response with a success or error message and an HTTP status code:\n
+        - HTTP 200 if the task is successfully updated.\n
+        - HTTP 400 if the task is already marked as "completed".\n
+        - HTTP 404 if the task is not found or the user does not own it.\n
+        - HTTP 500 if an internal error occurs.
+    """
     session = None
     try:
         session = Session()
@@ -202,6 +263,25 @@ def update_task(task_id: int, request: TaskRequest, user: dict = Depends(get_cur
 
 @router.patch("/tasks/{id}")
 def update_task_status(id,status:int,user: dict = Depends(get_current_user)):
+    """
+    Updates the status of a task for the authenticated user.\n
+
+    Validates if the task exists, is owned by the user, and updates its status to either "in_progress" or "completed".\n
+    Returns a success message if the task status is updated, or an error message if validation fails.\n
+
+    Parameters:
+    - id (int): The ID of the task to update.\n
+    - status (int): The new status of the task (0 for "in_progress", 1 for "completed").\n
+    - user (dict, optional): The authenticated user, injected by `Depends(get_current_user)`.\n
+
+    Returns:
+    - JSONResponse: A JSON response with a success or error message and an HTTP status code:\n
+        - HTTP 200 if the task status is successfully updated.\n
+        - HTTP 400 if the status is not 0 or 1.\n
+        - HTTP 404 if the task is not found.\n
+        - HTTP 403 if the user does not own the task.\n
+        - HTTP 500 if an internal error occurs.\n
+    """
     session = None
     try:
         session = Session()
@@ -237,6 +317,21 @@ def update_task_status(id,status:int,user: dict = Depends(get_current_user)):
 
 @router.delete("/tasks/{id}")
 def delete_task_by_id(id,user: dict = Depends(get_current_user)):
+    """
+    Delete a specific task by ID if the user is the owner.
+
+    Parameters:
+    ----------
+    id : int\n
+        The ID of the task to delete.
+    user : dict
+        The current user (retrieved from authentication).
+
+    Returns:
+    -------
+    JSONResponse\n
+        A success or error message based on the result.
+    """
     session = None
     try:
         session = Session()
