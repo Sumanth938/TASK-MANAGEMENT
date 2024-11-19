@@ -166,24 +166,27 @@ def get_current_user(token: str = Depends(oauth2_bearer)):
             db.close()
 
 @router.post("/create_normal_user")
-def create_new_user(user: Annotated[str, Depends(get_current_username)],
+def create_new_user(
     email: str = Form(...),
     password: str = Form(...),
+    username:str =Form(...),
     phone_number : str = Form(...),
     db: Session = Depends(get_db)):
 
     try:
 
          # Check if user with the same username or email already exists
-        db_user = db.query(User).filter(User.is_active == True,(User.phone_number == phone_number) | (User.email == email)).first()
+        db_user = db.query(User).filter(User.is_active == True,(User.username == username.strip()) | (User.email == email.strip())).first()
+        
+        if len(username) <6 :
+            return JSONResponse({"detail":"USERNAME MUST BE GREATER THAN 5 CHARECTERS"},status_code=400)
+
         if db_user:
             if db_user.email == email:
                 return JSONResponse({"detail":"Invalid email,email already registered"},status_code=400)
 
-            return JSONResponse({"detail":"Invalid phone_number ,phone_number already registered"},status_code=400)
+            return JSONResponse({"detail":"Invalid Username already existed ,use another username"},status_code=400)
 
-        if len(username) <6 :
-            return JSONResponse({"detail":"USERNAME MUST BE GREATER THAN 5 CHARECTERS"},status_code=400)
         # Create a new user instance
         new_user = User(
             username=username,
@@ -213,11 +216,11 @@ def login_for_access_token(form_data : OAuth2PasswordRequestForm = Depends(),
 
     try:
 
-        db_user = db.query(User).filter(User.is_active == True,User.is_active == True,(User.email == form_data.username) | (User.phone_number == form_data.username)).first()
+        db_user = db.query(User).filter(User.is_active == True,User.username == form_data.username).first()
         user = authenticate_user(form_data.username, form_data.password,db)
 
         if not db_user:
-            return JSONResponse({"detail":"INVALID PHONE_NUMBER OR EMAIL"},status_code=401)
+            return JSONResponse({"detail":"INVALID USERNAME"},status_code=401)
 
 
         if not user:
@@ -239,6 +242,32 @@ def login_for_access_token(form_data : OAuth2PasswordRequestForm = Depends(),
         if db:
             db.close()
 
+@router.get("/")
+async def logined_user(user: dict = Depends(get_current_user)):
+
+    try:
+        db= Session()
+        if user is None:
+            return {"message":"user not found", "status":status.HTTP_404_NOT_FOUND }
+
+        info_logger.info(f"user with email {user.get('email')} has accessed the get_logined_user API")
+        db_user = db.query(User).filter(User.is_active == True, User.id == user.get("user_id")).first()
+
+        info_logger.info(f'Successfully fetched user details from database')
+        return {"message": "successful",
+                "data":{
+                "user_details":db_user
+                },
+                "status":status.HTTP_200_OK }
+
+    except Exception as error:
+        error_logger.exception(f"Error occurred in get_logined_user API.Error:{error}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(error))
+
+    finally:
+        if db:
+            db.close()
+            
 #Exceptions
 def get_user_exception():
     credentials_exception = HTTPException(

@@ -9,7 +9,7 @@ import os,uvicorn
 from models import create_database_tables
 
 #other imports
-from routers import users,auth
+from routers import auth,todos
 
 create_database_tables()
 
@@ -27,7 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
-app.include_router(users.router)
+app.include_router(todos.router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8030, log_level="debug")

@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.sql.sqltypes import Boolean
 from models import base
-from sqlalchemy import Column,DateTime, Integer, String,ForeignKey,Float
+from sqlalchemy import Column,DateTime, Integer, String,ForeignKey,Float,Enum,Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -18,7 +18,7 @@ class Todos(base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String)
     description = Column(String)
-    due_date = Column(DateTime)
+    due_date = Column(Date)
     status = Column(Enum("pending", "in_progress", "completed", name="status_enum"), default="pending")
     is_active = Column(Boolean,default=True)
     created_by = Column(String)
