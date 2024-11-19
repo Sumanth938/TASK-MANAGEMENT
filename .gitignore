@@ -3,4 +3,3 @@ myenv/
 __pycache__/
 */__pycache__/
 logs/
-TasksDb.db
